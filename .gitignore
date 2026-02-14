@@ -1,0 +1,5 @@
+*.wasm
+__pycache__
+.vscode
+.venv
+.env
