@@ -23,7 +23,8 @@ class DeepSeekAPI:
         r = self.session.post(
             "https://chat.deepseek.com/api/v0/chat/create_pow_challenge", POW_REQUEST)
         challenge = r.json()["data"]["biz_data"]["challenge"]
-        self.session.headers["x-ds-pow-response"] = self.pow_solver.solve_challenge(challenge)
+        self.session.headers["x-ds-pow-response"] = self.pow_solver.solve_challenge(
+            challenge)
 
         request = {
             "chat_session_id": chat_id,
@@ -32,15 +33,36 @@ class DeepSeekAPI:
         }
         r = self.session.post(
             f"https://chat.deepseek.com{COMPLETION_PATH}", json.dumps(request), stream=True)
-        out = ""
+        message = {}
         for line in r.iter_lines():
             if line == b"event: finish":
                 break
             if not line.startswith(b"data: "):
                 continue
             data: dict = json.loads(line[6:])
-            if data.get("v") is None:
+
+            v = data.get("v")
+            if v is None:
                 continue
-            if (data.get("p") == "response/content" or data.get("p") is None) and isinstance(data["v"], str):
-                out += data["v"]
-        return out
+            if isinstance(v, dict):  # received the initial response
+                message = v
+                continue
+
+            path: str = data.get("p")
+            if path is None:
+                message["response"]["content"] += v
+                continue
+            self._set_property_by_path(message, path, v)
+
+        return message
+
+    def _set_property_by_path(self, obj: dict, path: str, value):
+        keys = path.split("/")
+        data = obj.copy()
+        for key in keys[:-1]:
+            if not isinstance(data.get(key), dict):
+                return False
+            data = data[key]
+        last_key = keys[-1]
+        data[last_key] = value
+        return True
