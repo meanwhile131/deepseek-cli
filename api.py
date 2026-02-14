@@ -62,6 +62,56 @@ class DeepSeekAPI:
 
         return message["response"]
 
+    def complete_stream(self, chat_id: str, prompt: str, parent_message_id: int = None, search=False, thinking=False):
+        """Generator that yields chunks of the streaming response.
+        Each chunk is a dict with 'type' ('content' or 'thinking') and 'content' (the incremental string).
+        """
+        self._set_pow_header()
+        request = {
+            "chat_session_id": chat_id,
+            "prompt": prompt,
+            "parent_message_id": parent_message_id,
+            "ref_file_ids": [],
+            "search_enabled": search,
+            "thinking_enabled": thinking
+        }
+        r = self.session.post(
+            f"https://chat.deepseek.com{COMPLETION_PATH}", json.dumps(request), stream=True)
+        message = {}
+        current_property = None
+        for line in r.iter_lines():
+            if line == b"event: finish":
+                break
+            if not line.startswith(b"data: "):
+                continue
+            data: dict = json.loads(line[6:])
+            v = data.get("v")
+            if v is None:
+                continue
+            if isinstance(v, dict):  # initial full message
+                message = v
+                continue
+
+            path: str = data.get("p")
+            if path is None:
+                # continuation of previous property
+                path = current_property
+                data["p"] = path          # ensure 'p' exists for _handle_property_update
+                data["o"] = "APPEND"       # set operation to APPEND
+            else:
+                # new property, capture current_property
+                current_property = path
+
+            # Update internal state (optional)
+            self._handle_property_update(message, data)
+
+            # Yield incremental content
+            if path == "response/content":
+                yield {"type": "content", "content": v}
+            elif path == "response/thinking_content":
+                yield {"type": "thinking", "content": v}
+        yield {"type": "message", "content": message["response"]}
+
     def _handle_property_update(self, obj: dict, update: dict):
         keys = update["p"].split("/")
         data = obj.copy()
@@ -74,6 +124,9 @@ class DeepSeekAPI:
             case "SET":
                 data[last_key] = update["v"]
             case "APPEND":
+                # Ensure the key exists before appending
+                if last_key not in data:
+                    data[last_key] = ""
                 data[last_key] += update["v"]
             case _:
                 return False
