@@ -13,7 +13,7 @@ api = DeepSeekAPI(token, pow_solver)
 chat = api.create_chat()
 message = {}
 system_prompt = """System prompt:
-You are an AI assistant inside a CLI application. You are able to invoke tools, but do so only if needed. To invoke a tool, output ONLY it's exact name, a newline, and it's arguments. There must be no output after or before this. Available tools:
+You are an AI assistant inside a CLI application. You are able to invoke tools, but do so only if needed. To invoke a tool, output ONLY it's exact name, a newline, and it's arguments. You may only make one tool call per message. There must be no output after or before this. Available tools:
 """
 for tool in tools:
     system_prompt += f"{tool}: {tools[tool]["description"]}\n"
@@ -33,21 +33,27 @@ while True:
         first_prompt = False
     message = api.complete(chat["id"], prompt, parent_message_id=message.get(
         "message_id"), thinking=True, search=True)
-    lines = message["content"].splitlines()
+    content = message["content"]
     selected_tool = None
-    if len(lines) > 0:
-        for tool in tools:
-            if lines[0] != tool:
-                continue
+    try:
+        first_newline_idx = content.index('\n')
+        tool = content[:first_newline_idx]
+        if tool in tools:
             selected_tool = tool
-            break
+    except ValueError:
+        pass
+
     if selected_tool == None:
         print("\033[1mReasoning:\033[0m")
         print(message["thinking_content"])
         print("\033[1mOutput:\033[0m")
-        print(message["content"])
-        prompt = None
+        print(content)
+        prompt = None  # ask the user for their new prompt
         continue
-    print(f"\033[1mCalling tool {lines[0]}\033[0m")
-    result = tools[selected_tool]["function"](*lines[1:])
-    prompt = f"Tool {selected_tool} returned:\n{result}"
+    print(f"\033[1mCalling tool {selected_tool}\033[0m")
+    try:
+        args = content[first_newline_idx+1:]
+        result = tools[selected_tool]["function"](args)
+        prompt = f"Tool {selected_tool} returned:\n{result}"
+    except Exception as e:
+        prompt = f"Tool {selected_tool} failed:\n{e}"
