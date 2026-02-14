@@ -26,7 +26,7 @@ class DeepSeekAPI:
         self.session.headers["x-ds-pow-response"] = self.pow_solver.solve_challenge(
             challenge)
 
-    def complete(self, chat_id: str, prompt: str, parent_message_id: int = None, search = False, thinking = False) -> str:
+    def complete(self, chat_id: str, prompt: str, parent_message_id: int = None, search=False, thinking=False) -> str:
         self._set_pow_header()
         request = {
             "chat_session_id": chat_id,
@@ -54,7 +54,7 @@ class DeepSeekAPI:
                 continue
 
             path: str = data.get("p")
-            if path is None: # append to current property
+            if path is None:  # append to current property
                 data["p"] = current_property
                 data["o"] = "APPEND"
             self._handle_property_update(message, data)

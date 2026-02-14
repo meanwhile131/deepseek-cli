@@ -34,6 +34,7 @@ while True:
     message = api.complete(chat["id"], prompt, parent_message_id=message.get(
         "message_id"), thinking=True, search=True)
     content = message["content"]
+
     selected_tool = None
     try:
         first_newline_idx = content.index('\n')
@@ -43,9 +44,9 @@ while True:
     except ValueError:
         pass
 
+    print("\033[1mReasoning:\033[0m")
+    print(message["thinking_content"])
     if selected_tool == None:
-        print("\033[1mReasoning:\033[0m")
-        print(message["thinking_content"])
         print("\033[1mOutput:\033[0m")
         print(content)
         prompt = None  # ask the user for their new prompt
