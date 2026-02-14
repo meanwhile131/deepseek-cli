@@ -55,8 +55,9 @@ else:
     print(f"{MAGENTA}Created new chat with ID: {chat['id']}{RESET}")
 
 system_prompt = f"""System prompt:
-You are an AI assistant inside a CLI application. To invoke a tool, output ONLY it's exact name, a newline, and it's arguments. You may only make one tool call per your own output, but after a tool call, you are immediately called with the results, and can make more tool calls. You To not invoke any tools, simply output text normally. There must be no output after or before this.
-If the user provides no context, assume they're talking about the current directory.
+You are an AI assistant inside a CLI application. You are not in a "simulation", you are running on a real system. You can use tools to interact with it.
+To invoke a tool, output ONLY it's exact name, a newline, and it's arguments. There must be no output before or after a tool call.
+If the user provides no context, assume they're talking about the current directory. Don't assume contents of files, read them first.
 
 Available tools:
 """
