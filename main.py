@@ -12,4 +12,7 @@ if token is None:
 pow_solver = POWSolver("sha3_wasm_bg.7b9ca65ddd.wasm")
 api = DeepSeekAPI(token, pow_solver)
 chat = api.create_chat()
-print(api.complete(chat["id"], "hi"))
+msg = api.complete(chat["id"], "hi")
+print(msg["content"])
+msg = api.complete(chat["id"], "repeat my last message", parent_message_id=msg["message_id"])
+print(msg["content"])

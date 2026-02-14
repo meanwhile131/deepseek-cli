@@ -19,16 +19,19 @@ class DeepSeekAPI:
         chat = r.json()["data"]["biz_data"]
         return chat
 
-    def complete(self, chat_id: str, prompt: str) -> str:
+    def _set_pow_header(self):
         r = self.session.post(
             "https://chat.deepseek.com/api/v0/chat/create_pow_challenge", POW_REQUEST)
         challenge = r.json()["data"]["biz_data"]["challenge"]
         self.session.headers["x-ds-pow-response"] = self.pow_solver.solve_challenge(
             challenge)
 
+    def complete(self, chat_id: str, prompt: str, parent_message_id: int = None) -> str:
+        self._set_pow_header()
         request = {
             "chat_session_id": chat_id,
             "prompt": prompt,
+            "parent_message_id": parent_message_id,
             "ref_file_ids": []
         }
         r = self.session.post(
@@ -54,7 +57,7 @@ class DeepSeekAPI:
                 continue
             self._set_property_by_path(message, path, v)
 
-        return message
+        return message["response"]
 
     def _set_property_by_path(self, obj: dict, path: str, value):
         keys = path.split("/")
