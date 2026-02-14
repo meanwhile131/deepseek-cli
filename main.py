@@ -14,10 +14,13 @@ WHITE = "\033[37m"
 YELLOW = "\033[33m"
 MAGENTA = "\033[35m"
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+default_wasm = os.path.join(script_dir, 'sha3_wasm_bg.7b9ca65ddd.wasm')
+
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='DeepSeek CLI chat')
 parser.add_argument('--chat', '-c', help='Resume an existing chat by ID')
-parser.add_argument('--wasm', '-w', help='Path to the WASM file for PoW solving', default='sha3_wasm_bg.7b9ca65ddd.wasm')
+parser.add_argument('--wasm', '-w', help='Path to the WASM file for PoW solving', default=default_wasm)
 args = parser.parse_args()
 
 token = os.getenv('TOKEN', None)
