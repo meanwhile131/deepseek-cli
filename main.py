@@ -17,6 +17,7 @@ MAGENTA = "\033[35m"
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='DeepSeek CLI chat')
 parser.add_argument('--chat', '-c', help='Resume an existing chat by ID')
+parser.add_argument('--wasm', '-w', help='Path to the WASM file for PoW solving', default='sha3_wasm_bg.7b9ca65ddd.wasm')
 args = parser.parse_args()
 
 token = os.getenv('TOKEN', None)
@@ -24,7 +25,7 @@ if token is None:
     print(f"{YELLOW}no TOKEN env var found{RESET}")
     exit(1)
 
-pow_solver = POWSolver("sha3_wasm_bg.7b9ca65ddd.wasm")
+pow_solver = POWSolver(args.wasm)
 api = DeepSeekAPI(token, pow_solver)
 
 if args.chat:
