@@ -26,24 +26,26 @@ class DeepSeekAPI:
         self.session.headers["x-ds-pow-response"] = self.pow_solver.solve_challenge(
             challenge)
 
-    def complete(self, chat_id: str, prompt: str, parent_message_id: int = None) -> str:
+    def complete(self, chat_id: str, prompt: str, parent_message_id: int = None, search = False, thinking = False) -> str:
         self._set_pow_header()
         request = {
             "chat_session_id": chat_id,
             "prompt": prompt,
             "parent_message_id": parent_message_id,
-            "ref_file_ids": []
+            "ref_file_ids": [],
+            "search_enabled": search,
+            "thinking_enabled": thinking
         }
         r = self.session.post(
             f"https://chat.deepseek.com{COMPLETION_PATH}", json.dumps(request), stream=True)
         message = {}
+        current_property = None
         for line in r.iter_lines():
             if line == b"event: finish":
                 break
             if not line.startswith(b"data: "):
                 continue
             data: dict = json.loads(line[6:])
-
             v = data.get("v")
             if v is None:
                 continue
@@ -52,20 +54,27 @@ class DeepSeekAPI:
                 continue
 
             path: str = data.get("p")
-            if path is None:
-                message["response"]["content"] += v
-                continue
-            self._set_property_by_path(message, path, v)
+            if path is None: # append to current property
+                data["p"] = current_property
+                data["o"] = "APPEND"
+            self._handle_property_update(message, data)
+            current_property = data["p"]
 
         return message["response"]
 
-    def _set_property_by_path(self, obj: dict, path: str, value):
-        keys = path.split("/")
+    def _handle_property_update(self, obj: dict, update: dict):
+        keys = update["p"].split("/")
         data = obj.copy()
         for key in keys[:-1]:
             if not isinstance(data.get(key), dict):
                 return False
             data = data[key]
         last_key = keys[-1]
-        data[last_key] = value
+        match update.get("o", "SET"):
+            case "SET":
+                data[last_key] = update["v"]
+            case "APPEND":
+                data[last_key] += update["v"]
+            case _:
+                return False
         return True

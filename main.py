@@ -1,6 +1,4 @@
-import requests
 import os
-import json
 from pow_solve import POWSolver
 from api import DeepSeekAPI
 
@@ -14,5 +12,5 @@ api = DeepSeekAPI(token, pow_solver)
 chat = api.create_chat()
 msg = api.complete(chat["id"], "hi")
 print(msg["content"])
-msg = api.complete(chat["id"], "repeat my last message", parent_message_id=msg["message_id"])
+msg = api.complete(chat["id"], "what is the longest bridge in the world", parent_message_id=msg["message_id"], thinking=True, search=True)
 print(msg["content"])
