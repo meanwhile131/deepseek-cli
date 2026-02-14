@@ -99,10 +99,42 @@ def get_cwd(args: str):
     return os.getcwd()
 
 
+def apply_search_replace(args: str):
+    lines = args.splitlines()
+    if not lines:
+        return "Error: No arguments provided"
+    path = Path(lines[0].strip())
+    block = '\n'.join(lines[1:])
+    search_marker = '<<<<<<< SEARCH'
+    sep_marker = '======='
+    replace_marker = '>>>>>>> REPLACE'
+    search_start = block.find(search_marker)
+    if search_start == -1:
+        return "Error: Could not find <<<<<<< SEARCH marker"
+    sep_start = block.find(sep_marker, search_start + len(search_marker))
+    if sep_start == -1:
+        return "Error: Could not find ======= marker"
+    replace_end = block.find(replace_marker, sep_start + len(sep_marker))
+    if replace_end == -1:
+        return "Error: Could not find >>>>>>> REPLACE marker"
+    search_content = block[search_start +
+                           len(search_marker):sep_start].strip('\n')
+    replace_content = block[sep_start +
+                            len(sep_marker):replace_end].strip('\n')
+    content = path.read_text()
+    new_content = content.replace(search_content, replace_content)
+    if new_content == content:
+        return "Error: Search string not found in file"
+    count = content.count(search_content)
+    path.write_text(new_content)
+    return f"Replaced {count} occurrence(s) in {path}"
+
+
 tools = {
     "list_files": {"description": "lists files (first and only argument is the directory)", "function": list_files},
     "create_directory": {"description": "creates a directory (first and only argument is the directory)", "function": create_directory},
     "read_file": {"description": "outputs the text contents of a file (first and only argument is the file path)", "function": read_file},
+    "apply_search_replace": {"description": "applies a search/replace block to a file. arguments: file path, then newline, then the block with <<<<<<< SEARCH and >>>>>>> REPLACE markers", "function": apply_search_replace},
     "write_file": {"description": "overwrites a file with specified contents. arguments: path, then newline, then all of the contents (don't escape anything)", "function": write_file},
     "run_command": {"description": "runs a shell command. arguments: newline-separated arguments for the command (the first 'argument' is the command itself)", "function": run_command},
     "find_replace": {"description": "replaces occurrences of a string in a file. arguments: path, then newline, then find (must be a single line, no newline), then newline, then replace (may contain newlines)", "function": find_replace},
