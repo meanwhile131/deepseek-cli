@@ -1,5 +1,7 @@
 from pathlib import Path
 import subprocess
+import shutil
+import os
 
 
 def list_files(args: str):
@@ -48,6 +50,55 @@ def find_replace(args: str):
     return f"Replaced {content.count(find)} entries"
 
 
+def file_exists(args: str):
+    path = Path(args.strip())
+    return str(path.exists())
+
+
+def append_file(args: str):
+    newline_idx = args.index('\n')
+    path = Path(args[:newline_idx])
+    content = args[newline_idx+1:]
+    with open(path, 'a') as f:
+        f.write(content)
+    return f"Appended to {path}"
+
+
+def delete_file(args: str):
+    path = Path(args.strip())
+    if path.is_file():
+        path.unlink()
+        return f"Deleted file {path}"
+    elif path.is_dir():
+        shutil.rmtree(path)
+        return f"Deleted directory {path} (recursively)"
+    else:
+        return f"Path does not exist: {path}"
+
+
+def copy_file(args: str):
+    lines = args.splitlines()
+    src = Path(lines[0].strip())
+    dst = Path(lines[1].strip())
+    if src.is_dir():
+        shutil.copytree(src, dst)
+    else:
+        shutil.copy2(src, dst)
+    return f"Copied {src} to {dst}"
+
+
+def move_file(args: str):
+    lines = args.splitlines()
+    src = Path(lines[0].strip())
+    dst = Path(lines[1].strip())
+    shutil.move(src, dst)
+    return f"Moved {src} to {dst}"
+
+
+def get_cwd(args: str):
+    return os.getcwd()
+
+
 tools = {
     "list_files": {"description": "lists files (first and only argument is the directory)", "function": list_files},
     "create_directory": {"description": "creates a directory (first and only argument is the directory)", "function": create_directory},
@@ -55,4 +106,10 @@ tools = {
     "write_file": {"description": "overwrites a file with specified contents. arguments: path, then newline, then all of the contents (don't escape anything)", "function": write_file},
     "run_command": {"description": "runs a shell command. arguments: newline-separated arguments for the command (the first 'argument' is the command itself)", "function": run_command},
     "find_replace": {"description": "replaces occurrences of a string in a file. arguments: path, then newline, then find (must be a single line, no newline), then newline, then replace (may contain newlines)", "function": find_replace},
+    "file_exists": {"description": "checks if a file or directory exists. argument: path", "function": file_exists},
+    "append_file": {"description": "appends content to a file. arguments: path, then newline, then content to append", "function": append_file},
+    "delete_file": {"description": "deletes a file or directory (recursive). argument: path", "function": delete_file},
+    "copy_file": {"description": "copies a file or directory. arguments: source, then newline, then destination", "function": copy_file},
+    "move_file": {"description": "moves/renames a file or directory. arguments: source, then newline, then destination", "function": move_file},
+    "get_cwd": {"description": "returns the current working directory. argument: ignored", "function": get_cwd},
 }
