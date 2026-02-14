@@ -10,7 +10,14 @@ if token is None:
 pow_solver = POWSolver("sha3_wasm_bg.7b9ca65ddd.wasm")
 api = DeepSeekAPI(token, pow_solver)
 chat = api.create_chat()
-msg = api.complete(chat["id"], "hi")
-print(msg["content"])
-msg = api.complete(chat["id"], "what is the longest bridge in the world", parent_message_id=msg["message_id"], thinking=True, search=True)
-print(msg["content"])
+message = {}
+while True:
+    try:
+        prompt = input("> ")
+    except EOFError:
+        break
+    message = api.complete(chat["id"], prompt, parent_message_id=message.get("message_id"), thinking=True, search=True)
+    print("\033[1mReasoning:\033[0m")
+    print(message["thinking_content"])
+    print("\033[1mOutput:\033[0m")
+    print(message["content"])
