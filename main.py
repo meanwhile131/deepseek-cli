@@ -51,13 +51,13 @@ else:
     message = {}
     print(f"{MAGENTA}Created new chat with ID: {chat['id']}{RESET}")
 
-system_prompt = f"""{BOLD}System prompt:{RESET}
+system_prompt = f"""System prompt:
 You are an AI assistant inside a CLI application. To invoke a tool, output ONLY it's exact name, a newline, and it's arguments. You may only make one tool call per message. To not invoke any tools, simply output text normally. There must be no output after or before this. Available tools:
 """
 for tool in tools:
     system_prompt += f"{tool}: {tools[tool]['description']}\n"
 system_prompt += f"""
-{BOLD}User prompt:{RESET}
+User prompt:
 """
 prompt = None
 while True:
