@@ -134,7 +134,7 @@ tools = {
     "list_files": {"description": "lists files (first and only argument is the directory)", "function": list_files},
     "create_directory": {"description": "creates a directory (first and only argument is the directory)", "function": create_directory},
     "read_file": {"description": "outputs the text contents of a file (first and only argument is the file path)", "function": read_file},
-    "apply_search_replace": {"description": "applies a search/replace block to a file. arguments: file path, then newline, then the block with <<<<<<< SEARCH and >>>>>>> REPLACE markers", "function": apply_search_replace},
+    "apply_search_replace": {"description": "applies a search/replace block to a file. prefer this over write_file for small changes. arguments: file path, then newline, then the block with <<<<<<< SEARCH and >>>>>>> REPLACE markers", "function": apply_search_replace},
     "write_file": {"description": "overwrites a file with specified contents. arguments: path, then newline, then all of the contents (don't escape anything)", "function": write_file},
     "run_command": {"description": "runs a shell command. arguments: newline-separated arguments for the command (the first 'argument' is the command itself)", "function": run_command},
     "find_replace": {"description": "replaces occurrences of a string in a file. arguments: path, then newline, then find (must be a single line, no newline), then newline, then replace (may contain newlines)", "function": find_replace},
