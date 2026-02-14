@@ -1,7 +1,12 @@
 import os
+import argparse
 from pow_solve import POWSolver
 from api import DeepSeekAPI
 from tools import tools
+
+parser = argparse.ArgumentParser(description='DeepSeek CLI')
+parser.add_argument('--chat', '-c', help='Resume an existing chat by ID')
+args = parser.parse_args()
 
 token = os.getenv('TOKEN', None)
 if token is None:
@@ -10,8 +15,26 @@ if token is None:
 
 pow_solver = POWSolver("sha3_wasm_bg.7b9ca65ddd.wasm")
 api = DeepSeekAPI(token, pow_solver)
-chat = api.create_chat()
-message = {}
+
+if args.chat:
+    # Resume existing chat
+    chat = {"id": args.chat}
+    first_prompt = False
+    print(f"\033[1mResuming chat {args.chat}\033[0m")
+    # Fetch the latest message ID to continue the thread
+    try:
+        chat_info = api.get_chat_info(args.chat)
+        message = {"message_id": chat_info.get("current_message_id")}
+    except Exception as e:
+        print(f"Warning: Could not fetch chat info: {e}")
+        message = {}
+else:
+    # Create new chat
+    chat = api.create_chat()
+    first_prompt = True
+    message = {}
+    print(f"\033[1mCreated new chat with ID: {chat['id']}\033[0m")
+
 system_prompt = """System prompt:
 You are an AI assistant inside a CLI application. To invoke a tool, output ONLY it's exact name, a newline, and it's arguments. You may only make one tool call per message. To not invoke any tools, simply output text normally. There must be no output after or before this. Available tools:
 """
@@ -20,7 +43,6 @@ for tool in tools:
 system_prompt += """
 User prompt:
 """
-first_prompt = True
 prompt = None
 while True:
     if prompt is None:

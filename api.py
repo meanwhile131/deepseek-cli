@@ -19,6 +19,13 @@ class DeepSeekAPI:
         chat = r.json()["data"]["biz_data"]
         return chat
 
+    def get_chat_info(self, chat_id: str):
+        r = self.session.get(f"https://chat.deepseek.com/api/v0/chat/history_messages?chat_session_id={chat_id}")
+        data = r.json()
+        if data.get("code") != 0:
+            raise Exception(f"Failed to get chat info: {data.get('msg')}")
+        return data["data"]["biz_data"]["chat_session"]
+
     def _set_pow_header(self):
         r = self.session.post(
             "https://chat.deepseek.com/api/v0/chat/create_pow_challenge", POW_REQUEST)
