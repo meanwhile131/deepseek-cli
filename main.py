@@ -1,7 +1,6 @@
 import os
 import argparse
-from pow_solve import POWSolver
-from api import DeepSeekAPI
+from deepseek_api import DeepSeekAPI, POWSolver
 from tools import tools
 
 # ANSI color codes

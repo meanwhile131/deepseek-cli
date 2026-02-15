@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "2940581c5b2548108954c0432289c3d803856e5bc6541af3cb06bf569eb9f60d"
+            "sha256": "113de48333d1b547e6b77594766358f7adcbb4c4988bf790460ac179cf3836bf"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -143,6 +143,11 @@
             "markers": "python_version >= '3.7'",
             "version": "==3.4.4"
         },
+        "deepseek-api": {
+            "editable": true,
+            "git": "https://github.com/meanwhile131/deepseek-api.git",
+            "ref": "c2d405883686bd36a212ed36e85641a02bc09fe8"
+        },
         "idna": {
             "hashes": [
                 "sha256:771a87f49d9defaf64091e6e6fe9c18d4833f140bd19464795bc32d966ca37ea",
@@ -226,7 +231,6 @@
                 "sha256:fcf92bee92742edd401ba41135185866f7026c502617f422eb432cfeca4fe236",
                 "sha256:fd49860271d52127d61197bb50b64f58454e9f578cb4b2c001a6de8b1f50b0b1"
             ],
-            "index": "pypi",
             "markers": "python_version >= '3.11'",
             "version": "==2.4.2"
         },
@@ -235,7 +239,6 @@
                 "sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6",
                 "sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf"
             ],
-            "index": "pypi",
             "markers": "python_version >= '3.9'",
             "version": "==2.32.5"
         },
@@ -262,7 +265,6 @@
                 "sha256:f5a6e237b5b94188ef9867926b447f779f540c729c92e4d91cc946f2bee7c282",
                 "sha256:fc2aaacf3ba794eac8baeb739939b2f7903e12d6b78edddc0b7f3ac3a9af6dfc"
             ],
-            "index": "pypi",
             "markers": "python_version >= '3.9'",
             "version": "==41.0.0"
         }

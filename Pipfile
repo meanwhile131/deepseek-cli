@@ -4,9 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "*"
-wasmtime = "*"
-numpy = "*"
+deepseek-api = {editable = true, git = "https://github.com/meanwhile131/deepseek-api.git"}
 
 [dev-packages]
 
