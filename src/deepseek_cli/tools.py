@@ -2,6 +2,7 @@ from pathlib import Path
 import subprocess
 import shutil
 import os
+from .colors import Colors, print_color
 
 
 def list_files(args: str):
@@ -32,9 +33,20 @@ def read_file(args: str):
 
 def run_command(args: str):
     command_args = args.splitlines()
+    # Print command in cyan
+    print_color("Running command: " + " ".join(command_args), Colors.CYAN)
     cmd = subprocess.run(
         command_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    return f"""{cmd.stdout.decode()}
+    output = cmd.stdout.decode()
+    # Print output in yellow
+    if output:
+        print_color(output, Colors.YELLOW)
+    # Print exit code
+    if cmd.returncode == 0:
+        print_color(f"Command exited with code {cmd.returncode}", Colors.GREEN)
+    else:
+        print_color(f"Command exited with code {cmd.returncode}", Colors.FAIL)
+    return f"""{output}
 
 The command exited with code {cmd.returncode}"""
 
