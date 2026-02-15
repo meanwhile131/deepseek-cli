@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "deepseek-cli"
+dependencies = [
+    "deepseek_api@git+https://github.com/meanwhile131/deepseek-api.git"
+]
+dynamic = ["version"]
+license = "GPL-3.0-or-later"
+license-files = ["LICEN[CS]E*"]
+
+[project.scripts]
+deepseek = "deepseek_cli:main"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.metadata]
+allow-direct-references = true
