@@ -1,4 +1,5 @@
 import os
+import time
 import argparse
 from deepseek_api import DeepSeekAPI, POWSolver
 from .tools import tools
@@ -82,48 +83,71 @@ Available tools:
     system_prompt += f"""
 User prompt:
 """
+    last_interrupt_time = 0
     prompt = None
     while True:
         if prompt is None:
             try:
                 prompt = input(f"{Colors.MAGENTA}> {Colors.RESET}")
+                last_interrupt_time = 0
             except EOFError:
                 break
+            except KeyboardInterrupt:
+                current_time = time.time()
+                if last_interrupt_time != 0 and current_time - last_interrupt_time < 1:
+                    print()
+                    break
+                else:
+                    last_interrupt_time = current_time
+                    print()
+                    continue
         if first_prompt:
             prompt = system_prompt + prompt
             first_prompt = False
 
         # Stream the response
-        stream = api.complete_stream(
-            chat["id"],
-            prompt,
-            parent_message_id=message.get("message_id"),
-            thinking=True,
-            search=True
-        )
+        try:
+            stream = api.complete_stream(
+                chat["id"],
+                prompt,
+                parent_message_id=message.get("message_id"),
+                thinking=True,
+                search=True
+            )
+        except KeyboardInterrupt:
+            print()
+            prompt = None
+            last_interrupt_time = 0
+            continue
 
         full_thinking = ""
         full_content = ""
         printed_thinking_header = False
         printed_output_header = False
 
-        for chunk in stream:
-            if chunk["type"] == "thinking":
-                if not printed_thinking_header:
-                    print(f"{Colors.BLUE}Reasoning:{Colors.RESET}")
-                    printed_thinking_header = True
-                print(f"{Colors.CYAN}{chunk['content']}{Colors.RESET}", end="", flush=True)
-                full_thinking += chunk["content"]
-            elif chunk["type"] == "content":
-                if not printed_output_header:
-                    if full_thinking:
-                        print()  # newline after reasoning
-                    print(f"{Colors.BLUE}Output:{Colors.RESET}")
-                    printed_output_header = True
-                print(f"{Colors.WHITE}{chunk['content']}{Colors.RESET}", end="", flush=True)
-                full_content += chunk["content"]
-            elif chunk["type"] == "message":
-                message = chunk["content"]
+        try:
+            for chunk in stream:
+                if chunk["type"] == "thinking":
+                    if not printed_thinking_header:
+                        print(f"{Colors.BLUE}Reasoning:{Colors.RESET}")
+                        printed_thinking_header = True
+                    print(f"{Colors.CYAN}{chunk['content']}{Colors.RESET}", end="", flush=True)
+                    full_thinking += chunk["content"]
+                elif chunk["type"] == "content":
+                    if not printed_output_header:
+                        if full_thinking:
+                            print()  # newline after reasoning
+                        print(f"{Colors.BLUE}Output:{Colors.RESET}")
+                        printed_output_header = True
+                    print(f"{Colors.WHITE}{chunk['content']}{Colors.RESET}", end="", flush=True)
+                    full_content += chunk["content"]
+                elif chunk["type"] == "message":
+                    message = chunk["content"]
+        except KeyboardInterrupt:
+            print()  # newline
+            prompt = None
+            last_interrupt_time = 0
+            continue
         print()  # final newline
 
         # Tool invocation detection - support multiple calls separated by "###"
@@ -146,6 +170,7 @@ User prompt:
         if not tool_calls:
             # No valid tool call found
             prompt = None
+            last_interrupt_time = 0
             continue
 
         # Execute tool calls sequentially
