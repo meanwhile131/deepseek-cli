@@ -74,7 +74,7 @@ arguments for tool 2...
 ###
 More output for user...
 
-If the user provides no context, assume they're talking about the current directory. Don't assume contents of files, read them first.
+If the user provides no context, assume they're talking about the current directory. Don't assume contents of files, read them first. Do NOT use Markdown, and NEVER use code blocks.
 
 Available tools:
 """
