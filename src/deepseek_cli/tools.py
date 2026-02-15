@@ -143,5 +143,5 @@ tools = {
     "delete_file": {"description": "deletes a file or directory (recursive). argument: path", "function": delete_file},
     "copy_file": {"description": "copies a file or directory. arguments: source, then newline, then destination", "function": copy_file},
     "move_file": {"description": "moves/renames a file or directory. arguments: source, then newline, then destination", "function": move_file},
-    "get_cwd": {"description": "returns the current working directory. no arguments are needed.", "function": get_cwd},
+    "get_cwd": {"description": "returns the current working directory. must be followed by a newline. no other arguments are needed.", "function": get_cwd},
 }
