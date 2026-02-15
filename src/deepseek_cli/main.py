@@ -47,33 +47,24 @@ you can obtain the token by copying the authorization header's value (without 'B
                 print(
                     f"{Colors.MAGENTA}Latest message ID: {message['message_id']}{Colors.RESET}")
             else:
-                print(f"{Colors.MAGENTA}No previous messages found, starting fresh.{Colors.RESET}")
+                print(
+                    f"{Colors.MAGENTA}No previous messages found, starting fresh.{Colors.RESET}")
         except Exception as e:
-            print(f"{Colors.YELLOW}Warning: Could not fetch chat info: {e}{Colors.RESET}")
+            print(
+                f"{Colors.YELLOW}Warning: Could not fetch chat info: {e}{Colors.RESET}")
             message = {}
     else:
         # Create new chat
         chat = api.create_chat()
         first_prompt = True
         message = {}
-        print(f"{Colors.MAGENTA}Created new chat with ID: {chat['id']}{Colors.RESET}")
+        print(
+            f"{Colors.MAGENTA}Created new chat with ID: {chat['id']}{Colors.RESET}")
 
     system_prompt = f"""System prompt:
 You are an AI assistant inside a CLI application. You are not in a "simulation", you are running on a real system. You can use tools to interact with it.
+To invoke a tool, output it's exact name, a newline, and it's arguments. Your response must contain nothing else.
 To show output to the user (or ask questions), simply print the output normally, no tools will be called.
-To invoke a tool, output it's exact name, a newline, and it's arguments.
-If you need to make multiple tool calls in one response, separate each tool call with a line containing exactly "###" (three hash symbols). Also include '###' between tool calls and your own output. For example:
-
-Output for user...
-###
-tool_name1
-arguments for tool 1...
-###
-tool_name2
-arguments for tool 2...
-###
-More output for user...
-
 If the user provides no context, assume they're talking about the current directory. Don't assume contents of files, read them first. Do NOT use Markdown, and NEVER use code blocks.
 
 Available tools:
@@ -83,7 +74,6 @@ Available tools:
     system_prompt += f"""
 User prompt:
 """
-    last_interrupt_time = 0
     prompt = None
     while True:
         if prompt is None:
@@ -131,7 +121,8 @@ User prompt:
                     if not printed_thinking_header:
                         print(f"{Colors.BLUE}Reasoning:{Colors.RESET}")
                         printed_thinking_header = True
-                    print(f"{Colors.CYAN}{chunk['content']}{Colors.RESET}", end="", flush=True)
+                    print(
+                        f"{Colors.CYAN}{chunk['content']}{Colors.RESET}", end="", flush=True)
                     full_thinking += chunk["content"]
                 elif chunk["type"] == "content":
                     if not printed_output_header:
@@ -139,7 +130,8 @@ User prompt:
                             print()  # newline after reasoning
                         print(f"{Colors.BLUE}Output:{Colors.RESET}")
                         printed_output_header = True
-                    print(f"{Colors.WHITE}{chunk['content']}{Colors.RESET}", end="", flush=True)
+                    print(
+                        f"{Colors.WHITE}{chunk['content']}{Colors.RESET}", end="", flush=True)
                     full_content += chunk["content"]
                 elif chunk["type"] == "message":
                     message = chunk["content"]
@@ -150,44 +142,27 @@ User prompt:
             continue
         print()  # final newline
 
-        # Tool invocation detection - support multiple calls separated by "###"
-        tool_calls = []
-        # Split the content by "###" delimiter
-        segments = full_content.split('###')
-        for segment in segments:
-            segment = segment.strip()
-            if not segment:
-                continue
-            # Each segment should have tool name on first line, then args
-            lines = segment.split('\n', 1)
-            tool_name = lines[0].strip()
-            if not tool_name:
-                continue
-            if tool_name in tools:
-                args = lines[1] if len(lines) > 1 else ''
-                tool_calls.append((tool_name, args))
+        # Tool invocation detection
+        selected_tool = None
+        try:
+            first_newline_idx = full_content.index('\n')
+            tool = full_content[:first_newline_idx]
+            if tool in tools:
+                selected_tool = tool
+        except ValueError:
+            if full_content in tools:
+                selected_tool = tool
 
-        if not tool_calls:
-            # No valid tool call found
+        if selected_tool is None:
+            # No tool call, wait for next user input
             prompt = None
             last_interrupt_time = 0
             continue
 
-        # Execute tool calls sequentially
-        results = []
-        for i, call in enumerate(tool_calls, 1):
-            if len(call) == 3:  # error case
-                tool_name, _, error_msg = call
-                print(f"{Colors.YELLOW}Skipping invalid tool call {i}: {tool_name}{Colors.RESET}")
-                results.append(f"Tool call {i}: {error_msg}")
-                continue
-            tool_name, args = call
-            print(f"{Colors.YELLOW}Calling tool {tool_name} ({i}/{len(tool_calls)}){Colors.RESET}")
-            try:
-                result = tools[tool_name]["function"](args)
-                results.append(f"Tool call {i}: {tool_name} returned:\n{result}")
-            except Exception as e:
-                results.append(f"Tool call {i}: {tool_name} failed:\n{e}")
-
-        # Combine results into a single prompt
-        prompt = "\n\n".join(results)
+        print(f"{Colors.YELLOW}Calling tool {selected_tool}{Colors.RESET}")
+        try:
+            args = full_content[first_newline_idx + 1:]
+            result = tools[selected_tool]["function"](args)
+            prompt = f"Tool {selected_tool} returned:\n{result}"
+        except Exception as e:
+            prompt = f"Tool {selected_tool} failed:\n{e}"
