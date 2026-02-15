@@ -2,6 +2,8 @@ import os
 import argparse
 from deepseek_api import DeepSeekAPI, POWSolver
 from .tools import tools
+import platformdirs
+from dotenv import load_dotenv
 
 # ANSI color codes
 RESET = "\033[0m"
@@ -15,16 +17,26 @@ MAGENTA = "\033[35m"
 
 
 def main():
+    config_dir = platformdirs.user_config_dir("deepseek")
+
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description='DeepSeek CLI chat')
     parser.add_argument('--chat', '-c', help='Resume an existing chat by ID')
     parser.add_argument(
         '--wasm', '-w', help='Path to the WASM file for PoW solving', default=None)
+    parser.add_argument(
+        '--config', help='Path to config directory', default=config_dir)
     args = parser.parse_args()
 
+    config_path = os.path.join(config_dir, "env")
+    load_dotenv(config_path)
     token = os.getenv('TOKEN', None)
     if token is None:
-        print(f"{YELLOW}no TOKEN env var found{RESET}")
+        print(f"""{YELLOW}no TOKEN env var found
+specify TOKEN=xxx in {config_path}
+you can obtain the token by copying the authorization header's value (without 'Bearer') from a request to DeepSeek in your browser
+{RESET}""")
+
         exit(1)
 
     pow_solver = POWSolver(args.wasm)

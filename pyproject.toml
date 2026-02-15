@@ -5,6 +5,8 @@ build-backend = "hatchling.build"
 [project]
 name = "deepseek-cli"
 dependencies = [
+    "python-dotenv",
+    "platformdirs",
     "deepseek_api@git+https://github.com/meanwhile131/deepseek-api.git"
 ]
 dynamic = ["version"]
