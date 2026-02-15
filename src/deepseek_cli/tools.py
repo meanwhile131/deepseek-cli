@@ -113,23 +113,41 @@ def apply_search_replace(args: str):
     if not lines:
         return "Error: No arguments provided"
     path = Path(lines[0].strip())
-    block = '\n'.join(lines[1:])
+    block_lines = lines[1:]  # the rest are the block
+
     search_marker = '<<<<<<< SEARCH'
     sep_marker = '======='
     replace_marker = '>>>>>>> REPLACE'
-    search_start = block.find(search_marker)
-    if search_start == -1:
-        return "Error: Could not find <<<<<<< SEARCH marker"
-    sep_start = block.find(sep_marker, search_start + len(search_marker))
-    if sep_start == -1:
-        return "Error: Could not find ======= marker"
-    replace_end = block.find(replace_marker, sep_start + len(sep_marker))
-    if replace_end == -1:
-        return "Error: Could not find >>>>>>> REPLACE marker"
-    search_content = block[search_start +
-                           len(search_marker):sep_start].strip('\n')
-    replace_content = block[sep_start +
-                            len(sep_marker):replace_end].strip('\n')
+
+    # Find indices of marker lines
+    search_idx = None
+    sep_idx = None
+    replace_idx = None
+    for i, line in enumerate(block_lines):
+        stripped = line.rstrip('\n')
+        if stripped == search_marker and search_idx is None:
+            search_idx = i
+        elif stripped == sep_marker and search_idx is not None and sep_idx is None:
+            sep_idx = i
+        elif stripped == replace_marker and sep_idx is not None and replace_idx is None:
+            replace_idx = i
+            break
+
+    if search_idx is None:
+        return "Error: Could not find <<<<<<< SEARCH marker line"
+    if sep_idx is None:
+        return "Error: Could not find ======= marker line"
+    if replace_idx is None:
+        return "Error: Could not find >>>>>>> REPLACE marker line"
+
+    # Extract search content (lines between search and sep, excluding markers)
+    search_lines = block_lines[search_idx+1:sep_idx]
+    replace_lines = block_lines[sep_idx+1:replace_idx]
+
+    # Preserve newlines by joining with newline
+    search_content = '\n'.join(search_lines)
+    replace_content = '\n'.join(replace_lines)
+
     content = path.read_text()
     new_content = content.replace(search_content, replace_content)
     if new_content == content:
