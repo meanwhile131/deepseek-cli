@@ -67,17 +67,24 @@ you can obtain the token by copying the authorization header's value (without 'B
         print(f"{MAGENTA}Created new chat with ID: {chat['id']}{RESET}")
 
     system_prompt = f"""System prompt:
-    You are an AI assistant inside a CLI application. You are not in a "simulation", you are running on a real system. You can use tools to interact with it.
-    To invoke a tool, output ONLY it's exact name, a newline, and it's arguments. There must be no output before or after a tool call.
-    If the user provides no context, assume they're talking about the current directory. Don't assume contents of files, read them first.
+You are an AI assistant inside a CLI application. You are not in a "simulation", you are running on a real system. You can use tools to interact with it.
+To show output to the user (or ask questions), simply print the output normally, no tools will be called.
+To invoke a tool, output ONLY it's exact name, a newline, and it's arguments. There must be no output before or after a tool call.
+If you need to make multiple tool calls in one response, separate each tool call with a line containing exactly "###" (three hash symbols). For example:
+tool_name1
+arguments for tool 1...
+###
+tool_name2
+arguments for tool 2...
+If the user provides no context, assume they're talking about the current directory. Don't assume contents of files, read them first.
 
-    Available tools:
-    """
+Available tools:
+"""
     for tool in tools:
         system_prompt += f"{tool}: {tools[tool]['description']}\n"
     system_prompt += f"""
-    User prompt:
-    """
+User prompt:
+"""
     prompt = None
     while True:
         if prompt is None:
@@ -122,25 +129,43 @@ you can obtain the token by copying the authorization header's value (without 'B
                 message = chunk["content"]
         print()  # final newline
 
-        # Tool invocation detection
-        selected_tool = None
-        try:
-            first_newline_idx = full_content.index('\n')
-            tool = full_content[:first_newline_idx]
-            if tool in tools:
-                selected_tool = tool
-        except ValueError:
-            pass
+        # Tool invocation detection - support multiple calls separated by "###"
+        tool_calls = []
+        # Split the content by "###" delimiter
+        segments = full_content.split('###')
+        for segment in segments:
+            segment = segment.strip()
+            if not segment:
+                continue
+            # Each segment should have tool name on first line, then args
+            lines = segment.split('\n', 1)
+            tool_name = lines[0].strip()
+            if not tool_name:
+                continue
+            if tool_name in tools:
+                args = lines[1] if len(lines) > 1 else ''
+                tool_calls.append((tool_name, args))
 
-        if selected_tool is None:
-            # No tool call, wait for next user input
+        if not tool_calls:
+            # No valid tool call found
             prompt = None
             continue
 
-        print(f"{YELLOW}Calling tool {selected_tool}{RESET}")
-        try:
-            args = full_content[first_newline_idx + 1:]
-            result = tools[selected_tool]["function"](args)
-            prompt = f"Tool {selected_tool} returned:\n{result}"
-        except Exception as e:
-            prompt = f"Tool {selected_tool} failed:\n{e}"
+        # Execute tool calls sequentially
+        results = []
+        for i, call in enumerate(tool_calls, 1):
+            if len(call) == 3:  # error case
+                tool_name, _, error_msg = call
+                print(f"{YELLOW}Skipping invalid tool call {i}: {tool_name}{RESET}")
+                results.append(f"Tool call {i}: {error_msg}")
+                continue
+            tool_name, args = call
+            print(f"{YELLOW}Calling tool {tool_name} ({i}/{len(tool_calls)}){RESET}")
+            try:
+                result = tools[tool_name]["function"](args)
+                results.append(f"Tool call {i}: {tool_name} returned:\n{result}")
+            except Exception as e:
+                results.append(f"Tool call {i}: {tool_name} failed:\n{e}")
+
+        # Combine results into a single prompt
+        prompt = "\n\n".join(results)
