@@ -61,19 +61,11 @@ you can obtain the token by copying the authorization header's value (without 'B
         print(
             f"{Colors.MAGENTA}Created new chat with ID: {chat['id']}{Colors.RESET}")
 
-    system_prompt = f"""System prompt:
-You are an AI assistant inside a CLI application. You are not in a "simulation", you are running on a real system. You can use tools to interact with it.
-To invoke a tool, output it's exact name, a newline, and it's arguments. Your response must contain nothing else.
-To show output to the user (or ask questions), simply print the output normally, no tools will be called.
-If the user provides no context, assume they're talking about the current directory. Don't assume contents of files, read them first. Do NOT use Markdown, and NEVER use code blocks.
-
-Available tools:
+    system_prompt = f"""To invoke a tool, output ONLY it's exact name, a newline, and it's arguments. Available tools:
 """
     for tool in tools:
         system_prompt += f"{tool}: {tools[tool]['description']}\n"
-    system_prompt += f"""
-User prompt:
-"""
+    system_prompt += "\n"
     prompt = None
     while True:
         if prompt is None:
