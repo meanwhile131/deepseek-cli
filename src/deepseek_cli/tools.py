@@ -45,49 +45,62 @@ def apply_search_replace(args: str):
     if not lines:
         return "Error: No arguments provided"
     path = Path(lines[0].strip())
-    path.touch()
-    block_lines = lines[1:]  # the rest are the block
+    path.touch()  # create file if it doesn't exist
+    block_lines = lines[1:]  # remaining lines contain one or more blocks
 
     search_marker = '<<<<<<< SEARCH'
     sep_marker = '======='
     replace_marker = '>>>>>>> REPLACE'
 
-    # Find indices of marker lines
-    search_idx = None
-    sep_idx = None
-    replace_idx = None
-    for i, line in enumerate(block_lines):
-        stripped = line.rstrip('\n')
-        if stripped == search_marker and search_idx is None:
-            search_idx = i
-        elif stripped == sep_marker and search_idx is not None and sep_idx is None:
-            sep_idx = i
-        elif stripped == replace_marker and sep_idx is not None and replace_idx is None:
-            replace_idx = i
-            break
-
-    if search_idx is None:
-        return "Error: Could not find <<<<<<< SEARCH marker line"
-    if sep_idx is None:
-        return "Error: Could not find ======= marker line"
-    if replace_idx is None:
-        return "Error: Could not find >>>>>>> REPLACE marker line"
-
-    # Extract search content (lines between search and sep, excluding markers)
-    search_lines = block_lines[search_idx+1:sep_idx]
-    replace_lines = block_lines[sep_idx+1:replace_idx]
-
-    # Preserve newlines by joining with newline
-    search_content = '\n'.join(search_lines)
-    replace_content = '\n'.join(replace_lines)
-
+    # Read current file content
     content = path.read_text()
-    new_content = content.replace(search_content, replace_content)
-    if new_content == content:
-        return "Error: Search string not found in file"
-    count = content.count(search_content)
-    path.write_text(new_content)
-    return f"Replaced {count} occurrence(s) in {path}"
+    current_content = content
+    total_replacements = 0
+    block_count = 0
+    errors = []
+
+    i = 0
+    while i < len(block_lines):
+        # Find the next block's markers
+        try:
+            # Locate SEARCH marker
+            search_idx = block_lines.index(search_marker, i)
+            # Locate SEP marker after that
+            sep_idx = block_lines.index(sep_marker, search_idx + 1)
+            # Locate REPLACE marker after that
+            replace_idx = block_lines.index(replace_marker, sep_idx + 1)
+        except ValueError:
+            errors.append(f"Block starting at line {i+2} is malformed (missing markers)")
+            # Skip to next line to avoid infinite loop
+            i += 1
+            continue
+
+        # Extract search and replace content (lines between markers, excluding markers)
+        search_lines = block_lines[search_idx+1:sep_idx]
+        replace_lines = block_lines[sep_idx+1:replace_idx]
+        search_content = '\n'.join(search_lines)
+        replace_content = '\n'.join(replace_lines)
+
+        # Apply replacement to current content
+        if search_content not in current_content:
+            errors.append(f"Block {block_count+1}: Search string not found in current content")
+        else:
+            count = current_content.count(search_content)
+            current_content = current_content.replace(search_content, replace_content)
+            total_replacements += count
+            block_count += 1
+
+        # Move past this block
+        i = replace_idx + 1
+
+    # Write final content back to file
+    path.write_text(current_content)
+
+    # Build result message
+    result = f"Applied {block_count} block(s) with {total_replacements} total replacement(s) in {path}"
+    if errors:
+        result += "\nErrors:\n" + "\n".join(errors)
+    return result
 
 
 tools = {
@@ -95,5 +108,5 @@ tools = {
     "create_directory": {"description": "creates a directory (first and only argument is the directory)", "function": create_directory},
     "read_file": {"description": "outputs the text contents of a file (first and only argument is the file path)", "function": read_file},
     "run_command": {"description": "runs a shell command. arguments: newline-separated arguments for the command (the first 'argument' is the command itself)", "function": run_command},
-    "apply_search_replace": {"description": "applies a search/replace block to a file. will create the file if it doesn't exist. arguments: file path, then newline, then the block with <<<<<<< SEARCH, =======, and >>>>>>> REPLACE markers", "function": apply_search_replace},
+    "apply_search_replace": {"description": "applies one or more search/replace blocks to a file. Will create the file if it doesn't exist. Arguments: file path, then newline, then the block(s) with <<<<<<< SEARCH, =======, and >>>>>>> REPLACE markers. Multiple blocks can be concatenated; each will be applied sequentially to the current file content.", "function": apply_search_replace},
 }
