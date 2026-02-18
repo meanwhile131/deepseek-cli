@@ -108,5 +108,5 @@ tools = {
     "create_directory": {"description": "creates a directory (first and only argument is the directory)", "function": create_directory},
     "read_file": {"description": "outputs the text contents of a file (first and only argument is the file path)", "function": read_file},
     "run_command": {"description": "runs a shell command. arguments: newline-separated arguments for the command (the first 'argument' is the command itself)", "function": run_command},
-    "apply_search_replace": {"description": "applies one or more search/replace blocks to a file. Will create the file if it doesn't exist. Arguments: file path, then newline, then the block(s) with <<<<<<< SEARCH, =======, and >>>>>>> REPLACE markers. Multiple blocks can be concatenated; each will be applied sequentially to the current file content.", "function": apply_search_replace},
+    "apply_search_replace": {"description": "applies one or more search/replace blocks to a file. Will create the file if it doesn't exist. Arguments: file path, then newline, then the block(s) with <<<<<<< SEARCH, =======, and >>>>>>> REPLACE markers. Multiple blocks can be concatenated (WITHOUT file names or the tool's name); each will be applied sequentially to the current file content.", "function": apply_search_replace},
 }
